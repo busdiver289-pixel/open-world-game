@@ -107,11 +107,8 @@ canvas {
   background: linear-gradient(90deg, #ffff00, #ff6600);
 }
 
-.bar .fill.red {
-  background: linear-gradient(90deg, #ff0000, #ff6600);
-}
-
-.identity-switch {
+.identity-switch,
+.controls-info {
   background: rgba(10, 15, 40, 0.85);
   border: 1px solid #00ffff;
   border-radius: 4px;
@@ -120,7 +117,8 @@ canvas {
   color: #00ffff;
   max-width: 360px;
   display: flex;
-  gap: 16px;
+  gap: 12px;
+  margin-bottom: 4px;
 }
 
 .key {
@@ -195,7 +193,7 @@ canvas {
   display: none;
 }
 
-/* Safehouse Modal */
+/* Modal */
 .modal {
   position: fixed;
   top: 0;
@@ -232,7 +230,8 @@ canvas {
   letter-spacing: 0.1em;
 }
 
-.safehouse-panel {
+.safehouse-panel,
+.contract-list {
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -253,24 +252,54 @@ canvas {
   font-size: 0.95rem;
 }
 
-.ghost-list,
-.inventory {
+.ghost-list > div,
+.contract-status > div {
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(0, 255, 150, 0.1);
   font-size: 0.85rem;
   color: #e8f0ff;
 }
 
-.ghost-list > div,
-.inventory > div {
-  padding: 4px 0;
-  border-bottom: 1px solid rgba(0, 255, 150, 0.1);
-}
-
 .ghost-list > div:last-child,
-.inventory > div:last-child {
+.contract-status > div:last-child {
   border-bottom: none;
 }
 
-#startRun {
+.contract-item {
+  background: rgba(0, 40, 20, 0.6);
+  border: 1px solid #00ff96;
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.contract-item:hover {
+  background: rgba(0, 60, 30, 0.8);
+  box-shadow: 0 0 15px rgba(0, 255, 150, 0.3);
+}
+
+.contract-item h4 {
+  color: #00ff96;
+  margin: 0 0 6px 0;
+  font-size: 0.95rem;
+}
+
+.contract-item p {
+  color: #ddeeff;
+  margin: 4px 0;
+  font-size: 0.85rem;
+}
+
+.contract-reward {
+  color: #ffff00;
+  font-weight: 700;
+}
+
+#startRun,
+#closeContract,
+.close-btn {
   background: #00ff96;
   color: #0a0e16;
   border: none;
@@ -286,11 +315,15 @@ canvas {
   box-shadow: 0 0 20px rgba(0, 255, 150, 0.3);
 }
 
-#startRun:hover {
+#startRun:hover,
+#closeContract:hover,
+.close-btn:hover {
   background: #00ffff;
   box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
 }
 
-#startRun:active {
+#startRun:active,
+#closeContract:active,
+.close-btn:active {
   transform: scale(0.95);
 }

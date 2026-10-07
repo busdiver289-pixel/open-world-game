@@ -31,11 +31,20 @@
           <span class="label">Loot:</span>
           <span id="loot" class="value">$0</span>
         </div>
+        <div class="stat-row">
+          <span class="label">Vehicle:</span>
+          <span id="vehicle" class="value">On Foot</span>
+        </div>
       </div>
       <div class="identity-switch">
         <span class="key">1</span> Enforcer
         <span class="key">2</span> Officer
         <span class="key">3</span> Fixer
+      </div>
+      <div class="controls-info">
+        <span class="key">F</span> Hijack/EMP
+        <span class="key">E</span> Interact
+        <span class="key">SPACE</span> Takedown
       </div>
     </div>
 
@@ -47,6 +56,14 @@
       <div id="messages"></div>
     </div>
 
+    <div id="contractTerminal" class="modal hidden">
+      <div class="modal-content">
+        <h2>CONTRACT TERMINAL</h2>
+        <div id="contractList" class="contract-list"></div>
+        <button id="closeContract" class="close-btn">CLOSE</button>
+      </div>
+    </div>
+
     <div id="safehouse" class="modal hidden">
       <div class="modal-content">
         <h2>SAFEHOUSE - CHRONO VAULT</h2>
@@ -56,12 +73,12 @@
             <div id="ghostList" class="ghost-list"></div>
           </div>
           <div class="section">
-            <h3>Persistent Inventory</h3>
-            <div id="inventory" class="inventory"></div>
-          </div>
-          <div class="section">
             <h3>Credits & Loot</h3>
             <p id="safehouseLoot">$0 from previous loops</p>
+          </div>
+          <div class="section">
+            <h3>Active Contracts</h3>
+            <div id="activeContracts" class="contract-status"></div>
           </div>
         </div>
         <button id="startRun">START NEW LOOP</button>
