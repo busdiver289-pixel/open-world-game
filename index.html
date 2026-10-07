@@ -3,43 +3,69 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Urban Legends - Open World RPG</title>
+    <title>Chrono Syndicate: Nightfall</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div class="hud">
-      <div class="title">URBAN LEGENDS</div>
+      <div class="title">CHRONO SYNDICATE</div>
+      <div class="loop-timer">
+        <span id="loopTime">00:00</span> / <span>15:00</span>
+      </div>
       <div class="stats-panel">
         <div class="stat-row">
-          <span class="label">Health:</span>
+          <span class="label">Identity:</span>
+          <span id="identity" class="value">Fixer</span>
+        </div>
+        <div class="stat-row">
+          <span class="label">Suspicion:</span>
           <div class="bar">
-            <div id="healthBar" class="fill red"></div>
+            <div id="suspicionBar" class="fill yellow"></div>
           </div>
         </div>
         <div class="stat-row">
-          <span class="label">Money:</span>
-          <span id="money" class="value">$0</span>
+          <span class="label">Heat:</span>
+          <span id="heat" class="value">None</span>
         </div>
         <div class="stat-row">
-          <span class="label">Wanted:</span>
-          <span id="wanted" class="value wanted-0">●</span>
-        </div>
-        <div class="stat-row">
-          <span class="label">Weapon:</span>
-          <span id="weapon" class="value">Fists</span>
+          <span class="label">Loot:</span>
+          <span id="loot" class="value">$0</span>
         </div>
       </div>
-      <div class="objective-panel">
-        <span id="objective">Explore the city...</span>
+      <div class="identity-switch">
+        <span class="key">1</span> Enforcer
+        <span class="key">2</span> Officer
+        <span class="key">3</span> Fixer
       </div>
     </div>
 
     <div class="minimap-container">
-      <canvas id="minimap" width="180" height="140"></canvas>
+      <canvas id="minimap" width="200" height="160"></canvas>
     </div>
 
     <div class="message-log">
       <div id="messages"></div>
+    </div>
+
+    <div id="safehouse" class="modal hidden">
+      <div class="modal-content">
+        <h2>SAFEHOUSE - CHRONO VAULT</h2>
+        <div class="safehouse-panel">
+          <div class="section">
+            <h3>Past Loop Ghosts</h3>
+            <div id="ghostList" class="ghost-list"></div>
+          </div>
+          <div class="section">
+            <h3>Persistent Inventory</h3>
+            <div id="inventory" class="inventory"></div>
+          </div>
+          <div class="section">
+            <h3>Credits & Loot</h3>
+            <p id="safehouseLoot">$0 from previous loops</p>
+          </div>
+        </div>
+        <button id="startRun">START NEW LOOP</button>
+      </div>
     </div>
 
     <canvas id="gameCanvas" width="1280" height="720"></canvas>

@@ -3,71 +3,86 @@ const ctx = canvas.getContext('2d');
 const minimapCanvas = document.getElementById('minimap');
 const minimapCtx = minimapCanvas.getContext('2d');
 const messagesEl = document.getElementById('messages');
-const moneyEl = document.getElementById('money');
-const healthBarEl = document.getElementById('healthBar');
-const wantedEl = document.getElementById('wanted');
-const weaponEl = document.getElementById('weapon');
-const objectiveEl = document.getElementById('objective');
+const loopTimeEl = document.getElementById('loopTime');
+const identityEl = document.getElementById('identity');
+const suspicionBarEl = document.getElementById('suspicionBar');
+const heatEl = document.getElementById('heat');
+const lootEl = document.getElementById('loot');
+const safehouseModal = document.getElementById('safehouse');
+const startRunBtn = document.getElementById('startRun');
 
 const WORLD = {
-  width: 4800,
-  height: 3200,
+  width: 5600,
+  height: 3800,
 };
 
-const WEAPONS = {
-  fists: { name: 'Fists', damage: 10, range: 30, cooldown: 0.4 },
-  pistol: { name: 'Pistol', damage: 35, range: 300, cooldown: 0.3 },
-  shotgun: { name: 'Shotgun', damage: 60, range: 150, cooldown: 0.6 },
+const LOOP_DURATION = 900; // 15 minutes in seconds
+const IDENTITIES = {
+  enforcer: { name: 'Enforcer', color: '#ff3333', accessLevel: 1 },
+  officer: { name: 'Officer', color: '#0066ff', accessLevel: 2 },
+  fixer: { name: 'Fixer', color: '#ffaa00', accessLevel: 0 },
 };
+
+const HEAT_LEVELS = ['None', 'Low', 'Medium', 'High', 'CRITICAL'];
 
 let gameState = {
   camera: { x: 0, y: 0 },
   keys: {},
   lastTime: 0,
   messages: [],
+  loopNumber: 1,
+  loopStartTime: 0,
+  loopActive: false,
+  ghostReplays: [],
+  persistentLoot: 0,
 };
 
 const player = {
-  x: 2400,
-  y: 1600,
-  radius: 16,
-  speed: 280,
-  color: '#4a9eff',
+  x: 2800,
+  y: 1900,
+  radius: 14,
+  speed: 250,
+  color: '#ffaa00',
   health: 100,
   maxHealth: 100,
-  money: 0,
-  wantedLevel: 0,
-  weapon: 'fists',
+  loot: 0,
+  suspicion: 0,
+  heat: 0,
+  identity: 'fixer',
   direction: { x: 1, y: 0 },
-  isAiming: false,
-  aimAngle: 0,
-  lastShot: 0,
-  inVehicle: null,
+  actionHistory: [],
+  empCooldown: 0,
+  isInCover: false,
 };
 
-const enemies = [];
-const vehicles = [];
-const projectiles = [];
-const pickups = [];
+const districts = [
+  { name: 'The Docks', x: 400, y: 500, w: 1000, h: 800, faction: 'Harvesters', color: '#1a3a4a' },
+  { name: 'Neon Plaza', x: 1600, y: 200, w: 1200, h: 900, faction: 'Neon Serpents', color: '#2a1a4a' },
+  { name: 'Industrial Zone', x: 3400, y: 600, w: 1200, h: 1000, faction: 'Iron Syndicate', color: '#3a2a1a' },
+  { name: 'Uptown', x: 2000, y: 1800, w: 1400, h: 1000, faction: 'Corporate Security', color: '#1a3a2a' },
+  { name: 'The Sprawl', x: 3600, y: 2200, w: 1400, h: 1200, faction: 'Street Runners', color: '#3a3a1a' },
+];
+
 const buildings = [
-  { x: 600, y: 500, w: 280, h: 240, type: 'shop', color: '#2d7f3e', name: 'Gun Store' },
-  { x: 1400, y: 700, w: 240, h: 200, type: 'bank', color: '#4a6fa5', name: 'First Bank' },
-  { x: 900, y: 1600, w: 300, h: 250, type: 'warehouse', color: '#5a4a3a', name: 'Warehouse' },
-  { x: 2200, y: 800, w: 260, h: 220, type: 'police', color: '#0066cc', name: 'Police Station' },
-  { x: 3200, y: 1200, w: 280, h: 240, type: 'garage', color: '#8b7355', name: 'Auto Garage' },
-  { x: 2800, y: 2400, w: 320, h: 280, type: 'bar', color: '#664400', name: 'Club Nexus' },
-  { x: 3900, y: 2000, w: 240, h: 200, type: 'hospital', color: '#ff6b6b', name: 'Hospital' },
-  { x: 1800, y: 2600, w: 300, h: 250, type: 'shop', color: '#2d7f3e', name: 'Market' },
+  { name: 'Safehouse', x: 2700, y: 1850, w: 80, h: 80, type: 'safehouse', faction: 'neutral', accessible: true },
+  { name: 'Neon Tower', x: 1800, y: 400, w: 120, h: 150, type: 'corp', faction: 'Corporate', accessible: false },
+  { name: 'Harvesters Den', x: 600, y: 800, w: 100, h: 100, type: 'gang', faction: 'Harvesters', accessible: false },
+  { name: 'Police Precinct', x: 2300, y: 900, w: 130, h: 140, type: 'police', faction: 'Police', accessible: false },
+  { name: 'Weapon Cache', x: 4000, y: 1000, w: 100, h: 80, type: 'cache', faction: 'neutral', accessible: false },
+  { name: 'Neon Club', x: 1700, y: 1200, w: 110, h: 110, type: 'gang', faction: 'Neon Serpents', accessible: false },
+  { name: 'Iron Warehouse', x: 3800, y: 1400, w: 150, h: 120, type: 'storage', faction: 'Iron Syndicate', accessible: false },
 ];
 
-const roads = [
-  { x: 0, y: 1500, w: WORLD.width, h: 200, type: 'horizontal' },
-  { x: 2300, y: 0, w: 200, h: WORLD.height, type: 'vertical' },
-  { x: 1200, y: 800, w: 400, h: 120, type: 'diagonal' },
-  { x: 3400, y: 1200, w: 300, h: 150, type: 'diagonal' },
+const security = [
+  { x: 2300, y: 900, type: 'camera', range: 250, isActive: true },
+  { x: 1800, y: 400, type: 'drone', range: 300, isActive: true },
+  { x: 4000, y: 1000, type: 'camera', range: 250, isActive: true },
 ];
 
-function addMessage(text, color = '#ddeeff') {
+const enemies = [];
+const projectiles = [];
+
+function addMessage(text, color = '#00ffff') {
   const msg = document.createElement('div');
   msg.textContent = text;
   msg.style.color = color;
@@ -76,90 +91,106 @@ function addMessage(text, color = '#ddeeff') {
 
   setTimeout(() => {
     if (msg.parentElement) msg.remove();
-  }, 5000);
+  }, 6000);
 }
 
-function spawnEnemy(x, y, type = 'thug') {
-  const enemy = {
-    x,
-    y,
-    radius: 14,
-    type,
-    health: 50,
-    maxHealth: 50,
-    speed: 120,
-    color: type === 'cop' ? '#0066cc' : type === 'gang' ? '#cc0000' : '#666',
-    direction: { x: 0, y: 1 },
-    targetAngle: Math.random() * Math.PI * 2,
-    timer: 0,
-    lastShot: 0,
-    weapon: type === 'cop' ? 'pistol' : 'fists',
-  };
-  enemies.push(enemy);
-}
-
-function spawnVehicle(x, y) {
-  const vehicle = {
-    x,
-    y,
-    w: 60,
-    h: 40,
-    speed: 350,
-    color: '#d4a574',
-    angle: 0,
-    velocity: { x: 0, y: 0 },
-    health: 100,
-    maxHealth: 100,
-    occupant: null,
-  };
-  vehicles.push(vehicle);
-}
-
-function spawnPickup(x, y, type = 'money') {
-  pickups.push({
-    x,
-    y,
-    type,
-    size: 8,
-    value: type === 'money' ? 50 + Math.random() * 100 : 1,
+function recordPlayerAction(action) {
+  player.actionHistory.push({
+    time: gameState.loopStartTime ? Date.now() - gameState.loopStartTime : 0,
+    x: player.x,
+    y: player.y,
+    action: action,
   });
 }
 
-function resizeCanvas() {
-  const ratio = window.devicePixelRatio || 1;
-  canvas.width = window.innerWidth * ratio;
-  canvas.height = window.innerHeight * ratio;
-  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-}
-
-function distance(ax, ay, bx, by) {
-  return Math.hypot(ax - bx, ay - by);
-}
-
-function clamp(value, min, max) {
-  return Math.min(Math.max(value, min), max);
-}
-
-function rectCircleCollision(circle, rect) {
-  const closestX = clamp(circle.x, rect.x, rect.x + rect.w);
-  const closestY = clamp(circle.y, rect.y, rect.y + rect.h);
-  const dx = circle.x - closestX;
-  const dy = circle.y - closestY;
-  return dx * dx + dy * dy < circle.radius * circle.radius;
-}
-
-function checkCollisions(pos, radius) {
-  for (const building of buildings) {
-    if (rectCircleCollision({ ...pos, radius }, building)) {
-      return true;
+function spawnGhostReplays() {
+  // Replay past actions as semi-transparent ghosts
+  const ghostColor = 'rgba(0, 255, 150, 0.2)';
+  
+  for (const replay of gameState.ghostReplays) {
+    for (const action of replay.actions) {
+      if (Math.abs(action.time - (Date.now() - gameState.loopStartTime)) < 500) {
+        ctx.fillStyle = ghostColor;
+        ctx.beginPath();
+        ctx.arc(action.x - gameState.camera.x, action.y - gameState.camera.y, 10, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
   }
-  return false;
 }
 
-function updateCamera() {
-  gameState.camera.x = clamp(player.x - window.innerWidth / 2, 0, WORLD.width - window.innerWidth);
-  gameState.camera.y = clamp(player.y - window.innerHeight / 2, 0, WORLD.height - window.innerHeight);
+function useEMP(delta) {
+  if (player.empCooldown > 0) {
+    player.empCooldown -= delta;
+    return;
+  }
+
+  player.empCooldown = 8; // 8 second cooldown
+  const empRadius = 500;
+
+  // Disable security in radius
+  for (const sec of security) {
+    if (distance(player.x, player.y, sec.x, sec.y) < empRadius) {
+      sec.isActive = false;
+      setTimeout(() => {
+        sec.isActive = true;
+      }, 30000); // Re-enable after 30 seconds
+    }
+  }
+
+  addMessage('EMP DEPLOYED', '#ffff00');
+  recordPlayerAction('emp-deployed');
+}
+
+function changeIdentity(newIdentity) {
+  player.identity = newIdentity;
+  player.color = IDENTITIES[newIdentity].color;
+  player.suspicion = 0;
+  addMessage(`Identity switched to ${IDENTITIES[newIdentity].name}`, '#ffaa00');
+  recordPlayerAction(`identity-${newIdentity}`);
+}
+
+function updateSuspicion(delta) {
+  // Suspicion increases when in police zones or acting suspicious
+  for (const building of buildings) {
+    if (building.type === 'police') {
+      const distToPolice = distance(player.x, player.y, building.x + building.w / 2, building.y + building.h / 2);
+      if (distToPolice < 200) {
+        if (player.identity === 'officer') {
+          player.suspicion += delta * 5; // Slower increase as officer
+        } else {
+          player.suspicion += delta * 20; // Faster increase if not officer
+        }
+      }
+    }
+  }
+
+  // Movement or running increases suspicion
+  const isMoving = gameState.keys['w'] || gameState.keys['a'] || gameState.keys['s'] || gameState.keys['d'];
+  if (isMoving && player.suspicion < 100) {
+    player.suspicion += delta * 2;
+  }
+
+  // Decay suspicion over time
+  if (!isMoving && player.suspicion > 0) {
+    player.suspicion -= delta * 5;
+  }
+
+  player.suspicion = Math.max(0, Math.min(100, player.suspicion));
+}
+
+function updateHeat() {
+  if (player.suspicion > 80) {
+    player.heat = 4; // CRITICAL
+  } else if (player.suspicion > 60) {
+    player.heat = 3; // High
+  } else if (player.suspicion > 40) {
+    player.heat = 2; // Medium
+  } else if (player.suspicion > 20) {
+    player.heat = 1; // Low
+  } else {
+    player.heat = 0; // None
+  }
 }
 
 function updatePlayer(delta) {
@@ -181,259 +212,71 @@ function updatePlayer(delta) {
     const nextX = player.x + dx * player.speed * delta;
     const nextY = player.y + dy * player.speed * delta;
 
-    if (!checkCollisions({ x: nextX, y: player.y }, player.radius)) {
+    // Simple boundary check
+    if (nextX > player.radius && nextX < WORLD.width - player.radius) {
       player.x = nextX;
     }
-    if (!checkCollisions({ x: player.x, y: nextY }, player.radius)) {
+    if (nextY > player.radius && nextY < WORLD.height - player.radius) {
       player.y = nextY;
     }
   }
 
-  player.x = clamp(player.x, player.radius, WORLD.width - player.radius);
-  player.y = clamp(player.y, player.radius, WORLD.height - player.radius);
+  recordPlayerAction(`pos-${Math.floor(player.x)}-${Math.floor(player.y)}`);
 }
 
-function updateEnemies(delta) {
-  for (let i = enemies.length - 1; i >= 0; i--) {
-    const enemy = enemies[i];
-    enemy.timer += delta;
-
-    const dist = distance(enemy.x, enemy.y, player.x, player.y);
-
-    if (dist < 500) {
-      const angle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
-      enemy.direction.x = Math.cos(angle);
-      enemy.direction.y = Math.sin(angle);
-
-      if (dist > 60) {
-        enemy.x += enemy.direction.x * enemy.speed * delta;
-        enemy.y += enemy.direction.y * enemy.speed * delta;
-      }
-
-      if (dist < 200 && enemy.lastShot + (WEAPONS[enemy.weapon]?.cooldown || 0.5) < Date.now() / 1000) {
-        fireProjectile(enemy.x, enemy.y, angle, enemy.weapon, true);
-        enemy.lastShot = Date.now() / 1000;
-      }
-    } else if (enemy.timer > 3) {
-      enemy.timer = 0;
-      enemy.targetAngle = Math.random() * Math.PI * 2;
-      enemy.direction.x = Math.cos(enemy.targetAngle);
-      enemy.direction.y = Math.sin(enemy.targetAngle);
-    }
-
-    if (enemy.health <= 0) {
-      enemies.splice(i, 1);
-      player.money += 100;
-      spawnPickup(enemy.x, enemy.y, 'money');
-      continue;
-    }
-  }
-}
-
-function fireProjectile(fromX, fromY, angle, weaponType = 'pistol', isEnemy = false) {
-  const weapon = WEAPONS[weaponType] || WEAPONS.pistol;
-  const speed = 400;
-
-  projectiles.push({
-    x: fromX,
-    y: fromY,
-    vx: Math.cos(angle) * speed,
-    vy: Math.sin(angle) * speed,
-    range: weapon.range,
-    damage: weapon.damage,
-    isEnemy,
-    traveled: 0,
-  });
-}
-
-function updateProjectiles(delta) {
-  for (let i = projectiles.length - 1; i >= 0; i--) {
-    const proj = projectiles[i];
-    proj.x += proj.vx * delta;
-    proj.y += proj.vy * delta;
-    proj.traveled += Math.hypot(proj.vx * delta, proj.vy * delta);
-
-    if (proj.traveled > proj.range) {
-      projectiles.splice(i, 1);
-      continue;
-    }
-
-    if (proj.isEnemy) {
-      const dist = distance(proj.x, proj.y, player.x, player.y);
-      if (dist < 20) {
-        player.health -= proj.damage;
-        player.wantedLevel = Math.min(5, player.wantedLevel + 1);
-        addMessage('You were shot!', '#ff6b6b');
-        projectiles.splice(i, 1);
-      }
-    } else {
-      for (let j = enemies.length - 1; j >= 0; j--) {
-        if (distance(proj.x, proj.y, enemies[j].x, enemies[j].y) < 20) {
-          enemies[j].health -= proj.damage;
-          projectiles.splice(i, 1);
-          break;
-        }
-      }
-    }
-  }
-}
-
-function handleInteraction() {
-  for (const building of buildings) {
-    const dist = distance(player.x, player.y, building.x + building.w / 2, building.y + building.h / 2);
-    if (dist < 150) {
-      switch (building.type) {
-        case 'gun_store':
-        case 'shop':
-          if (building.name === 'Gun Store') {
-            if (player.money >= 200) {
-              player.money -= 200;
-              player.weapon = 'pistol';
-              addMessage('Purchased Pistol!', '#ffd700');
-            } else {
-              addMessage('Not enough money!', '#ff6b6b');
-            }
-          }
-          break;
-        case 'hospital':
-          if (player.health < player.maxHealth) {
-            const healCost = (player.maxHealth - player.health) * 5;
-            if (player.money >= healCost) {
-              player.money -= healCost;
-              player.health = player.maxHealth;
-              addMessage('Healed!', '#4aff4a');
-            } else {
-              addMessage('Cannot afford healing', '#ff6b6b');
-            }
-          }
-          break;
-        case 'police':
-          addMessage('Wanted level reset!', '#4aff4a');
-          player.wantedLevel = 0;
-          break;
-        case 'bar':
-          player.money += 50;
-          addMessage('Found money at the bar!', '#ffd700');
-          break;
-      }
-      return;
-    }
-  }
-}
-
-function updatePickups(delta) {
-  for (let i = pickups.length - 1; i >= 0; i--) {
-    const pickup = pickups[i];
-    if (distance(player.x, player.y, pickup.x, pickup.y) < 30) {
-      if (pickup.type === 'money') {
-        player.money += pickup.value;
-        addMessage(`+$${Math.floor(pickup.value)}`, '#ffd700');
-      }
-      pickups.splice(i, 1);
-    }
-  }
-}
-
-function updateWantedLevel(delta) {
-  if (player.wantedLevel > 0) {
-    player.wantedLevel -= delta * 0.1;
-    if (player.wantedLevel < 0) player.wantedLevel = 0;
-  }
+function updateCamera() {
+  gameState.camera.x = Math.max(0, Math.min(player.x - window.innerWidth / 2, WORLD.width - window.innerWidth));
+  gameState.camera.y = Math.max(0, Math.min(player.y - window.innerHeight / 2, WORLD.height - window.innerHeight));
 }
 
 function drawWorld() {
   ctx.save();
   ctx.translate(-gameState.camera.x, -gameState.camera.y);
 
-  // Draw roads
-  for (const road of roads) {
-    ctx.fillStyle = '#444';
-    ctx.fillRect(road.x, road.y, road.w, road.h);
-    ctx.strokeStyle = '#ffff00';
-    ctx.lineWidth = 4;
-    if (road.type === 'horizontal') {
-      for (let x = road.x; x < road.x + road.w; x += 80) {
-        ctx.setLineDash([30, 20]);
-        ctx.beginPath();
-        ctx.moveTo(x, road.y + road.h / 2);
-        ctx.lineTo(x + 40, road.y + road.h / 2);
-        ctx.stroke();
-      }
-    } else if (road.type === 'vertical') {
-      for (let y = road.y; y < road.y + road.h; y += 80) {
-        ctx.setLineDash([30, 20]);
-        ctx.beginPath();
-        ctx.moveTo(road.x + road.w / 2, y);
-        ctx.lineTo(road.x + road.w / 2, y + 40);
-        ctx.stroke();
-      }
-    }
-    ctx.setLineDash([]);
+  // Draw districts
+  for (const district of districts) {
+    ctx.fillStyle = district.color;
+    ctx.fillRect(district.x, district.y, district.w, district.h);
+    ctx.strokeStyle = '#00ff96';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(district.x, district.y, district.w, district.h);
+
+    ctx.fillStyle = '#00ff96';
+    ctx.font = 'bold 14px Courier New';
+    ctx.textAlign = 'center';
+    ctx.fillText(district.name, district.x + district.w / 2, district.y + 25);
   }
 
   // Draw buildings
   for (const building of buildings) {
-    ctx.fillStyle = building.color;
+    ctx.fillStyle = building.type === 'safehouse' ? '#00ff00' : building.faction === 'Police' ? '#0066ff' : '#666';
     ctx.fillRect(building.x, building.y, building.w, building.h);
-    ctx.fillStyle = '#000';
-    ctx.font = 'bold 12px Arial';
+    ctx.strokeStyle = '#00ffff';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(building.x, building.y, building.w, building.h);
+
+    ctx.fillStyle = '#fff';
+    ctx.font = '10px Courier New';
     ctx.textAlign = 'center';
     ctx.fillText(building.name, building.x + building.w / 2, building.y + building.h / 2);
-    ctx.strokeStyle = '#333';
+  }
+
+  // Draw security cameras and drones
+  for (const sec of security) {
+    ctx.strokeStyle = sec.isActive ? '#ff0000' : '#333333';
     ctx.lineWidth = 2;
-    ctx.strokeRect(building.x, building.y, building.w, building.h);
-  }
-
-  // Draw projectiles
-  for (const proj of projectiles) {
-    ctx.fillStyle = '#ffff00';
     ctx.beginPath();
-    ctx.arc(proj.x, proj.y, 4, 0, Math.PI * 2);
+    ctx.arc(sec.x, sec.y, sec.range, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = sec.isActive ? '#ff0000' : '#333333';
+    ctx.beginPath();
+    ctx.arc(sec.x, sec.y, 6, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  // Draw pickups
-  for (const pickup of pickups) {
-    ctx.fillStyle = '#ffd700';
-    ctx.beginPath();
-    ctx.arc(pickup.x, pickup.y, pickup.size, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // Draw enemies
-  for (const enemy of enemies) {
-    ctx.fillStyle = enemy.color;
-    ctx.beginPath();
-    ctx.arc(enemy.x, enemy.y, enemy.radius, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Health bar
-    const healthPercent = enemy.health / enemy.maxHealth;
-    ctx.fillStyle = '#ff4444';
-    ctx.fillRect(enemy.x - 15, enemy.y - 25, 30 * healthPercent, 4);
-    ctx.strokeStyle = '#fff';
-    ctx.strokeRect(enemy.x - 15, enemy.y - 25, 30, 4);
-  }
-
-  // Draw vehicles
-  for (const vehicle of vehicles) {
-    ctx.save();
-    ctx.translate(vehicle.x, vehicle.y);
-    ctx.rotate(vehicle.angle);
-    ctx.fillStyle = vehicle.color;
-    ctx.fillRect(-vehicle.w / 2, -vehicle.h / 2, vehicle.w, vehicle.h);
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(-vehicle.w / 2, -vehicle.h / 2, vehicle.w, vehicle.h);
-    ctx.restore();
-
-    // Health bar
-    const healthPercent = vehicle.health / vehicle.maxHealth;
-    ctx.fillStyle = '#ff4444';
-    ctx.fillRect(vehicle.x - 30, vehicle.y - 40, 60 * healthPercent, 4);
-    ctx.strokeStyle = '#fff';
-    ctx.strokeRect(vehicle.x - 30, vehicle.y - 40, 60, 4);
-  }
+  // Draw ghost replays
+  spawnGhostReplays();
 
   // Draw player
   ctx.fillStyle = player.color;
@@ -441,78 +284,120 @@ function drawWorld() {
   ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
   ctx.fill();
 
-  // Draw weapon sight
-  ctx.strokeStyle = player.color;
+  ctx.strokeStyle = '#ffffff';
   ctx.lineWidth = 2;
-  const aimDist = 40;
-  ctx.beginPath();
-  ctx.moveTo(player.x + player.direction.x * aimDist, player.y + player.direction.y * aimDist);
-  ctx.lineTo(player.x + player.direction.x * (aimDist + 20), player.y + player.direction.y * (aimDist + 20));
-  ctx.stroke();
+  ctx.strokeRect(player.x - player.radius, player.y - player.radius, player.radius * 2, player.radius * 2);
 
   ctx.restore();
 }
 
 function drawHUD() {
-  healthBarEl.style.width = (player.health / player.maxHealth) * 100 + '%';
-  moneyEl.textContent = '$' + Math.floor(player.money);
-  weaponEl.textContent = WEAPONS[player.weapon]?.name || 'Fists';
-  wantedEl.textContent = player.wantedLevel > 0 ? '●'.repeat(Math.ceil(player.wantedLevel)) : '●';
-  wantedEl.className = 'value wanted-' + Math.floor(player.wantedLevel);
+  const timeInLoop = gameState.loopStartTime ? (Date.now() - gameState.loopStartTime) / 1000 : 0;
+  const minutes = Math.floor(timeInLoop / 60);
+  const seconds = Math.floor(timeInLoop % 60);
+  loopTimeEl.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
-  if (player.health <= 0) {
-    objectiveEl.textContent = 'You are dead. Press R to respawn.';
-  } else {
-    objectiveEl.textContent = 'Explore the city. Use E to interact. Left-click to shoot.';
-  }
+  identityEl.textContent = IDENTITIES[player.identity].name;
+  suspicionBarEl.style.width = player.suspicion + '%';
+  heatEl.textContent = HEAT_LEVELS[player.heat];
+  lootEl.textContent = '$' + Math.floor(gameState.persistentLoot + player.loot);
 }
 
 function drawMinimap() {
   const minimapW = minimapCanvas.width;
   const minimapH = minimapCanvas.height;
-  minimapCtx.fillStyle = 'rgba(20, 30, 50, 0.9)';
+  minimapCtx.fillStyle = 'rgba(10, 20, 40, 0.95)';
   minimapCtx.fillRect(0, 0, minimapW, minimapH);
 
   const sx = minimapW / WORLD.width;
   const sy = minimapH / WORLD.height;
 
+  // Districts
+  for (const district of districts) {
+    minimapCtx.fillStyle = district.color;
+    minimapCtx.fillRect(district.x * sx, district.y * sy, district.w * sx, district.h * sy);
+  }
+
   // Buildings
   for (const building of buildings) {
-    minimapCtx.fillStyle = building.color;
+    minimapCtx.fillStyle = building.type === 'safehouse' ? '#00ff00' : '#888';
     minimapCtx.fillRect(building.x * sx, building.y * sy, building.w * sx, building.h * sy);
   }
 
-  // Enemies
-  minimapCtx.fillStyle = '#cc0000';
-  for (const enemy of enemies) {
-    minimapCtx.fillRect(enemy.x * sx - 2, enemy.y * sy - 2, 4, 4);
-  }
-
-  // Vehicles
-  minimapCtx.fillStyle = '#8b7355';
-  for (const vehicle of vehicles) {
-    minimapCtx.fillRect(vehicle.x * sx - 3, vehicle.y * sy - 3, 6, 6);
-  }
-
   // Player
-  minimapCtx.fillStyle = '#4a9eff';
+  minimapCtx.fillStyle = player.color;
   minimapCtx.beginPath();
   minimapCtx.arc(player.x * sx, player.y * sy, 4, 0, Math.PI * 2);
   minimapCtx.fill();
 }
 
+function distance(ax, ay, bx, by) {
+  return Math.hypot(ax - bx, ay - by);
+}
+
+function handleInteraction() {
+  for (const building of buildings) {
+    if (distance(player.x, player.y, building.x + building.w / 2, building.y + building.h / 2) < 100) {
+      if (building.type === 'safehouse') {
+        // Save ghost replay if loop active
+        if (gameState.loopActive) {
+          gameState.ghostReplays.push({
+            loopNumber: gameState.loopNumber,
+            actions: player.actionHistory,
+          });
+          gameState.persistentLoot += player.loot;
+          addMessage(`LOOP ${gameState.loopNumber} SAVED - Loot recorded`, '#00ff00');
+        }
+        // Show safehouse modal
+        showSafehouse();
+      }
+    }
+  }
+}
+
+function showSafehouse() {
+  gameState.loopActive = false;
+  safehouseModal.classList.remove('hidden');
+  
+  // Populate ghost list
+  const ghostList = document.getElementById('ghostList');
+  ghostList.innerHTML = '';
+  for (const replay of gameState.ghostReplays) {
+    const div = document.createElement('div');
+    div.textContent = `Loop ${replay.loopNumber}: ${replay.actions.length} actions recorded`;
+    ghostList.appendChild(div);
+  }
+
+  // Show persistent loot
+  document.getElementById('safehouseLoot').textContent = `$${Math.floor(gameState.persistentLoot)} from previous loops`;
+}
+
+function startNewLoop() {
+  safehouseModal.classList.add('hidden');
+  gameState.loopNumber += 1;
+  gameState.loopStartTime = Date.now();
+  gameState.loopActive = true;
+  player.actionHistory = [];
+  player.loot = 0;
+  player.suspicion = 0;
+  addMessage(`LOOP ${gameState.loopNumber} INITIATED`, '#00ff96');
+}
+
 function update(delta) {
-  if (player.health <= 0) return;
+  if (!gameState.loopActive) return;
+
+  const timeInLoop = (Date.now() - gameState.loopStartTime) / 1000;
+  if (timeInLoop > LOOP_DURATION) {
+    // Loop time expired - force return to safehouse
+    addMessage('LOCKDOWN PROTOCOL ACTIVATED', '#ff0000');
+    player.loot *= 0.5; // Lose half loot if not back in time
+    handleInteraction(); // Try to reach safehouse
+  }
 
   updatePlayer(delta);
-  updateEnemies(delta);
-  updateProjectiles(delta);
-  updatePickups(delta);
-  updateWantedLevel(delta);
+  updateSuspicion(delta);
+  updateHeat();
   updateCamera();
-  drawWorld();
-  drawMinimap();
-  drawHUD();
 }
 
 function loop(timestamp) {
@@ -520,6 +405,11 @@ function loop(timestamp) {
   gameState.lastTime = timestamp;
 
   update(delta);
+  ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+  drawWorld();
+  drawMinimap();
+  drawHUD();
+
   requestAnimationFrame(loop);
 }
 
@@ -528,47 +418,30 @@ window.addEventListener('keydown', (event) => {
   const key = event.key.toLowerCase();
   gameState.keys[key] = true;
 
-  if (key === 'e') {
-    handleInteraction();
-  }
-  if (key === 'r' && player.health <= 0) {
-    player.health = player.maxHealth;
-    player.x = 2400;
-    player.y = 1600;
-    player.wantedLevel = 0;
-  }
+  if (key === '1') changeIdentity('enforcer');
+  if (key === '2') changeIdentity('officer');
+  if (key === '3') changeIdentity('fixer');
+  if (key === 'f') useEMP(0);
+  if (key === 'e') handleInteraction();
 });
 
 window.addEventListener('keyup', (event) => {
   gameState.keys[event.key.toLowerCase()] = false;
 });
 
-window.addEventListener('click', (event) => {
-  if (player.health <= 0) return;
-
-  const rect = canvas.getBoundingClientRect();
-  const mouseX = (event.clientX - rect.left) + gameState.camera.x;
-  const mouseY = (event.clientY - rect.top) + gameState.camera.y;
-  const angle = Math.atan2(mouseY - player.y, mouseX - player.x);
-
-  const weapon = WEAPONS[player.weapon];
-  if (player.lastShot + (weapon?.cooldown || 0.4) < Date.now() / 1000) {
-    fireProjectile(player.x, player.y, angle, player.weapon);
-    player.lastShot = Date.now() / 1000;
-    player.wantedLevel = Math.min(5, player.wantedLevel + 0.2);
-  }
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
 });
 
-window.addEventListener('resize', resizeCanvas);
+startRunBtn.addEventListener('click', startNewLoop);
 
 // Initialize
-resizeCanvas();
-spawnEnemy(800, 600, 'thug');
-spawnEnemy(1500, 1200, 'gang');
-spawnEnemy(3200, 1000, 'cop');
-spawnVehicle(2500, 2000);
-spawnVehicle(3600, 1500);
-addMessage('Welcome to Urban Legends', '#4a9eff');
-addMessage('Explore buildings, fight enemies, earn money', '#ffd700');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+addMessage('Welcome to CHRONO SYNDICATE: NIGHTFALL', '#00ff96');
+addMessage('Reach the safehouse to save your run and start a new loop', '#00ffff');
+addMessage('Press 1-3 to change identity, F for EMP, E to interact', '#ffaa00');
+showSafehouse();
 
 requestAnimationFrame(loop);
