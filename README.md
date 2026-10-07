@@ -1,35 +1,53 @@
-# Wanderer: Open World Game
+# Urban Legends - Open World RPG
 
-A small browser-based open world game prototype built with HTML5 canvas.
+A GTA-inspired browser-based open world action RPG.
 
 ## Features
-- Top-down open world exploration
-- WASD / arrow key movement
-- NPC interaction
-- Collectible moon crystals
-- Simple quest loop
-- Day/night inspired sky and minimap
-- No build step required
+- Third-person open world exploration
+- Combat with multiple weapons
+- Wanted level system
+- Money and loot system
+- NPCs and enemies that patrol and fight back
+- Multiple building types with unique interactions
+- Vehicle placement (expandable)
+- Minimap and HUD
+- Projectile-based combat
 
-## Run locally
-Open `index.html` in a web browser, or serve the folder with a simple local HTTP server:
+## Controls
+- **Move**: W, A, S, D or arrow keys
+- **Aim**: Mouse position
+- **Shoot**: Left-click
+- **Interact**: E (visit buildings)
+- **Respawn**: R (when dead)
 
+## Building Types
+- **Gun Store**: Buy weapons
+- **Hospital**: Heal health
+- **Police Station**: Reduce wanted level
+- **Bar**: Find money
+- **Bank**: (placeholder)
+- **Warehouse**: (placeholder)
+- **Garage**: (placeholder)
+- **Market**: (placeholder)
+
+## Gameplay
+1. Explore the city and visit buildings
+2. Fight enemies and cops
+3. Earn money from defeated enemies
+4. Upgrade weapons and health
+5. Manage your wanted level
+
+## Run Locally
 ```bash
 python3 -m http.server 8000
 ```
 
-Then visit:
+Then visit: `http://localhost:8000`
 
-```text
-http://localhost:8000
-```
-
-## Controls
-- Move: W, A, S, D or arrow keys
-- Interact: E
-
-## Goal
-Collect 3 moon crystals and return to Elder Mira in the valley.
-
-## Notes
-This is intentionally lightweight and easy to expand into a larger RPG, survival, or exploration system.
+## Future Additions
+- Drivable vehicles
+- Mission system
+- More weapons and items
+- NPCs with dialogue
+- Inventory system
+- Skill progression

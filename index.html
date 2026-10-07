@@ -3,16 +3,43 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Wanderer: Open World</title>
+    <title>Urban Legends - Open World RPG</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div class="hud">
-      <div class="title">Wanderer</div>
-      <div class="stats">
-        <span id="objective">Objective: Gather 3 moon crystals</span>
-        <span id="status">Explore the valley...</span>
+      <div class="title">URBAN LEGENDS</div>
+      <div class="stats-panel">
+        <div class="stat-row">
+          <span class="label">Health:</span>
+          <div class="bar">
+            <div id="healthBar" class="fill red"></div>
+          </div>
+        </div>
+        <div class="stat-row">
+          <span class="label">Money:</span>
+          <span id="money" class="value">$0</span>
+        </div>
+        <div class="stat-row">
+          <span class="label">Wanted:</span>
+          <span id="wanted" class="value wanted-0">●</span>
+        </div>
+        <div class="stat-row">
+          <span class="label">Weapon:</span>
+          <span id="weapon" class="value">Fists</span>
+        </div>
       </div>
+      <div class="objective-panel">
+        <span id="objective">Explore the city...</span>
+      </div>
+    </div>
+
+    <div class="minimap-container">
+      <canvas id="minimap" width="180" height="140"></canvas>
+    </div>
+
+    <div class="message-log">
+      <div id="messages"></div>
     </div>
 
     <canvas id="gameCanvas" width="1280" height="720"></canvas>
