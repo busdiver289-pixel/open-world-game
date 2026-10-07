@@ -3,15 +3,88 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Wanderer: Open World</title>
+    <title>Chrono Syndicate: Nightfall</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div class="hud">
-      <div class="title">Wanderer</div>
-      <div class="stats">
-        <span id="objective">Objective: Gather 3 moon crystals</span>
-        <span id="status">Explore the valley...</span>
+      <div class="title">CHRONO SYNDICATE</div>
+      <div class="loop-timer">
+        <span id="loopTime">00:00</span> / <span>15:00</span>
+      </div>
+      <div class="stats-panel">
+        <div class="stat-row">
+          <span class="label">Identity:</span>
+          <span id="identity" class="value">Fixer</span>
+        </div>
+        <div class="stat-row">
+          <span class="label">Suspicion:</span>
+          <div class="bar">
+            <div id="suspicionBar" class="fill yellow"></div>
+          </div>
+        </div>
+        <div class="stat-row">
+          <span class="label">Heat:</span>
+          <span id="heat" class="value">None</span>
+        </div>
+        <div class="stat-row">
+          <span class="label">Loot:</span>
+          <span id="loot" class="value">$0</span>
+        </div>
+        <div class="stat-row">
+          <span class="label">Vehicle:</span>
+          <span id="vehicle" class="value">On Foot</span>
+        </div>
+      </div>
+      <div class="objective-panel">
+        <span id="objective">Objective: Reach the safehouse and start a run.</span>
+      </div>
+      <div class="identity-switch">
+        <span class="key">1</span> Enforcer
+        <span class="key">2</span> Officer
+        <span class="key">3</span> Fixer
+      </div>
+      <div class="controls-info">
+        <span class="key">F</span> Hijack/EMP
+        <span class="key">E</span> Interact
+        <span class="key">SPACE</span> Takedown
+      </div>
+    </div>
+
+    <div class="minimap-container">
+      <canvas id="minimap" width="200" height="160"></canvas>
+    </div>
+
+    <div class="message-log">
+      <div id="messages"></div>
+    </div>
+
+    <div id="contractTerminal" class="modal hidden">
+      <div class="modal-content">
+        <h2>CONTRACT TERMINAL</h2>
+        <div id="contractList" class="contract-list"></div>
+        <button id="closeContract" class="close-btn">CLOSE</button>
+      </div>
+    </div>
+
+    <div id="safehouse" class="modal hidden">
+      <div class="modal-content">
+        <h2>SAFEHOUSE - CHRONO VAULT</h2>
+        <div class="safehouse-panel">
+          <div class="section">
+            <h3>Past Loop Ghosts</h3>
+            <div id="ghostList" class="ghost-list"></div>
+          </div>
+          <div class="section">
+            <h3>Credits & Loot</h3>
+            <p id="safehouseLoot">$0 from previous loops</p>
+          </div>
+          <div class="section">
+            <h3>Active Contracts</h3>
+            <div id="activeContracts" class="contract-status"></div>
+          </div>
+        </div>
+        <button id="startRun">START NEW LOOP</button>
       </div>
     </div>
 
